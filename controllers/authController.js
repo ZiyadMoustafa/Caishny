@@ -6,7 +6,6 @@ const sharp = require('sharp');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const FileType = require('file-type');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sendEmail = require('../utils/email');
@@ -59,15 +58,17 @@ const uploadToCloudinary = (buffer, filename, folderPath) =>
 
 // Middleware to Process and Upload Image to Cloudinary
 exports.resizePhotosAndUpload = catchAsync(async (req, res, next) => {
+  const { fileTypeFromBuffer } = await import('file-type');
+
   if (!req.files || req.files.length === 0) return next();
 
   const { fullName } = req.body;
 
-  const folderPath = `Caishny/Drivers${fullName}`;
+  const folderPath = `Caishny/Drivers/${fullName}`;
 
   const uploadPromises = req.files.map(async (file) => {
     // 1) تحقق من نوع الملف عن طريق تحليل محتوي الملف
-    const fileType = await FileType.fromBuffer(file.buffer);
+    const fileType = await fileTypeFromBuffer(file.buffer);
     if (!fileType || !['image/jpeg', 'image/png'].includes(fileType.mime)) {
       throw new AppError('نوع الصورة غير مدعوم', 400);
     }
@@ -75,14 +76,12 @@ exports.resizePhotosAndUpload = catchAsync(async (req, res, next) => {
     // 2) نظف الصورة
     const imageBuffer = await sharp(file.buffer)
       .toFormat('jpeg')
-      .jpeg({ quality: 90 })
-      .withMetadata({ exif: false })
+      .jpeg({ quality: 70 })
       .toBuffer();
 
     // 3) اسم عشوائي آمن
     const uniqueFileName = uuidv4();
 
-    // 4) ارفعها على Cloudinary
     const result = await uploadToCloudinary(
       imageBuffer,
       uniqueFileName,
@@ -92,11 +91,12 @@ exports.resizePhotosAndUpload = catchAsync(async (req, res, next) => {
     return result.secure_url;
   });
 
-  // ⏳ انتظر كل عمليات الرفع تخلص
-  const uploadedImages = await Promise.all(uploadPromises);
+  const uploadedImages = await Promise.allSettled(uploadPromises);
 
   // Add image URLs to req.body
-  req.body.photos = uploadedImages;
+  req.body.photos = uploadedImages
+    .filter((r) => r.status === 'fulfilled')
+    .map((r) => r.value);
 
   next();
 });
@@ -139,6 +139,10 @@ exports.signup = catchAsync(async (req, res, next) => {
   const existUser = await User.findOne({ email: req.body.email });
   if (existUser) {
     return next(new AppError('المستخدم موجود بالفعل', 400));
+  }
+
+  if (req.body.location && typeof req.body.location === 'string') {
+    req.body.location = JSON.parse(req.body.location);
   }
 
   // 1) create an account
@@ -251,7 +255,7 @@ exports.resendVerificationCode = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return next(new AppError('هذا البريد الإلكتروني غير مسجل.', 404));
+    return next(new AppError('هذا البريد الإلكتروني غير مسجل', 404));
   }
 
   if (user.active) {
@@ -259,11 +263,11 @@ exports.resendVerificationCode = catchAsync(async (req, res, next) => {
   }
 
   // Generate new code
-  const verificationCode = user.createEmailVerificationCode();
-  if (!verificationCode.allowed) {
+  const { allowed, code } = user.createEmailVerificationCode();
+  if (!allowed) {
     return next(
       new AppError(
-        'تم إرسال كود بالفعل. برجاء الانتظار حتى انتهاء صلاحية الكود الحالي.',
+        'تم إرسال كود بالفعل. برجاء الانتظار حتى انتهاء صلاحية الكود الحالي',
         429,
       ),
     );
@@ -281,7 +285,7 @@ exports.resendVerificationCode = catchAsync(async (req, res, next) => {
     '{{reason}}',
     `verify your email address`,
   );
-  htmlTemplate = htmlTemplate.replace('{{OTP}}', verificationCode);
+  htmlTemplate = htmlTemplate.replace('{{OTP}}', code);
 
   await sendEmail({
     email: user.email,
@@ -291,7 +295,7 @@ exports.resendVerificationCode = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: 'success',
-    message: 'تم إعادة إرسال رمز التحقق إلى بريدك الإلكتروني.',
+    message: 'تم إعادة إرسال رمز التحقق إلى بريدك الإلكتروني',
   });
 });
 
@@ -301,12 +305,12 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   if (!user) return next(new AppError('المستخدم غير موجود', 404));
 
   // 2) generate the random reset code (5 digit)
-  const resetCode = user.createPasswordResetCode();
+  const { allowed, code } = user.createPasswordResetCode();
 
-  if (!resetCode.allowed) {
+  if (!allowed) {
     return next(
       new AppError(
-        'تم إرسال كود بالفعل. برجاء الانتظار حتى انتهاء صلاحية الكود الحالي.',
+        'تم إرسال كود بالفعل. برجاء الانتظار حتى انتهاء صلاحية الكود الحالي',
         429,
       ),
     );
@@ -327,7 +331,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
 
     htmlTemplate = htmlTemplate.replace('{{reason}}', `reset your password`);
 
-    htmlTemplate = htmlTemplate.replace('{{OTP}}', resetCode);
+    htmlTemplate = htmlTemplate.replace('{{OTP}}', code);
     await sendEmail({
       email: user.email,
       subject: 'Reset Password',

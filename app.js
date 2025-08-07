@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const cors = require('cors');
+const compression = require('compression');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -16,6 +17,8 @@ app.use(cors());
 
 // Set security HTTP headers
 app.use(helmet());
+
+app.use(compression());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

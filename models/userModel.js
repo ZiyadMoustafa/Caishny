@@ -131,7 +131,7 @@ userSchema.methods.changePasswordAfter = function (JWTTimestamps) {
 
 userSchema.methods.createPasswordResetCode = function () {
   if (this.passwordResetExpires && this.passwordResetExpires > Date.now()) {
-    return { allowed: false };
+    return { allowed: false, code: null };
   }
 
   const resetCode = Math.floor(10000 + Math.random() * 90000).toString();
@@ -144,7 +144,7 @@ userSchema.methods.createPasswordResetCode = function () {
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
   this.passwordResetVerified = false;
 
-  return resetCode;
+  return { allowed: true, code: resetCode };
 };
 
 userSchema.methods.createEmailVerificationCode = function () {
@@ -152,7 +152,7 @@ userSchema.methods.createEmailVerificationCode = function () {
     this.VerificationCodeExpires &&
     this.VerificationCodeExpires > Date.now()
   ) {
-    return { allowed: false };
+    return { allowed: false, code: null };
   }
 
   const verifyCode = Math.floor(10000 + Math.random() * 90000).toString();
@@ -164,7 +164,7 @@ userSchema.methods.createEmailVerificationCode = function () {
 
   this.VerificationCodeExpires = Date.now() + 10 * 60 * 1000;
 
-  return verifyCode;
+  return { allowed: true, code: verifyCode };
 };
 
 // Index location for geospatial queries
