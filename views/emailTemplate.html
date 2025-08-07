@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OTP Verification</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #fff;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 40px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f88c29 10%, #ff3461 90%);
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .top-section {
+        text-align: left;
+        margin-bottom: 40px;
+      }
+
+      .top-section .logo {
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+      }
+
+      .top-section .greeting {
+        font-size: 22px;
+        font-weight: 500;
+        line-height: 1.6;
+      }
+
+      .main-content {
+        text-align: center;
+        background-color: #fff;
+        color: #333;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+      }
+
+      .main-content h2 {
+        font-size: 26px;
+        margin-bottom: 10px;
+      }
+
+      .main-content p {
+        font-size: 16px;
+        margin: 12px 0;
+      }
+
+      .main-content .small-note {
+        font-size: 13px;
+        margin: 12px 0 20px;
+        color: #666;
+      }
+
+      .otp-box {
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 8px;
+        background-color: #f8f8f8;
+        color: #ff3461;
+        padding: 16px 24px;
+        border-radius: 10px;
+        display: inline-block;
+        margin: 20px 0;
+      }
+
+      .bottom-section {
+        text-align: left;
+        margin-top: 20px;
+        font-size: 15px;
+      }
+
+      .bottom-section .signature {
+        margin-top: 40px;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="top-section">
+        <div class="logo">Caishny</div>
+        <div class="greeting">
+          Hey {{USER}},<br />
+          <br />
+        </div>
+      </div>
+
+      <div class="main-content">
+        <h2>OTP Verification</h2>
+        <p>Please use the code below to {{reason}}:</p>
+        <div class="otp-box">{{OTP}}</div>
+        <p>This code is valid for only 10 minutes.</p>
+        <p class="small-note">(For security reasons)</p>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+      </div>
+
+      <div class="bottom-section">
+        <div class="signature">
+          Yours,<br />
+          The Caishny Team
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
