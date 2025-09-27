@@ -1,6 +1,7 @@
 const express = require('express');
 
 const authController = require('../controllers/authController');
+const userController = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -19,5 +20,14 @@ router.patch('/resetPassword/:id', authController.resetPassword);
 router.get('/logout', authController.logout);
 
 router.use(authController.protect);
+
+router.get('/getProfile', userController.getUser);
+router.patch(
+  '/updateProfile',
+  userController.uploadPhoto,
+  userController.resizePhotosAndUpload,
+  userController.updateUser,
+);
+router.delete('/deleteMe', userController.deleteMe);
 
 module.exports = router;

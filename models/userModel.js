@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: {
       type: Date,
     },
+    profilePhoto: String,
     emailVerificationCode: String,
     VerificationCodeExpires: Date,
     passwordResetCode: String,
